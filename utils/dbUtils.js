@@ -1,15 +1,13 @@
 import mysql from "mysql";
 
+import config from "./config.js";
 import { info, error } from "./logger.js";
 
 const DB = mysql.createConnection({
-    host: "localhost",
-    user: "libraryUser",
-    password: "IDontLikeWritingPapers",
-    database: "library",
-});
-DB.on("error", (err) => {
-    error("Database error: ", err);
+    host: config.DB_HOST,
+    user: config.DB_USER,
+    database: config.DB_NAME,
+    password: config.DB_PASSWD,
 });
 
 process.on("SIGINT", () => {
@@ -52,45 +50,11 @@ DB.connect((err) => {
  *       console.error("Error executing query:", error);
  *   });
  */
-export const makeQueryPromise = (queryString, values) => {
+export const makeSQLPromise = (queryString, values) => {
     return new Promise((resolve, reject) => {
         DB.query(queryString, values, (err, results) => {
             if (err) {
-                error(`Error executing ${queryString}: ${err}`);
-                reject(err);
-            } else {
-                resolve(results);
-            }
-        });
-    });
-};
-
-/**
- * Executes a database insertion query asynchronously and returns a promise.
- * This function takes an SQL insertion query command and values to be inserted,
- * sends the query to the database using the DB.query method,
- * and resolves or rejects a promise based on the query execution result.
- * @param {string} insertString The SQL insertion query command.
- * @param {Array} values An array of values to be inserted into the database.
- * @returns {Promise<Object>} A promise that resolves with an object containing information about the insertion upon successful execution,
- *                            or rejects with an error if an issue occurs during the insertion operation.
- *                            The resolved object typically contains details such as the number of affected rows and the inserted ID.
- * @example
- * const insertString = "INSERT INTO Users (name, age) VALUES (?, ?)";
- * const values = ["John", 25];
- * makeInsertPromise(insertString, values)
- *   .then(result => {
- *       console.log("Insertion result:", result);
- *   })
- *   .catch(error => {
- *       console.error("Error executing insertion query:", error);
- *   });
- */
-export const makeInsertPromise = (insertString, values) => {
-    return new Promise((resolve, reject) => {
-        DB.query(insertString, values, (err, results) => {
-            if (err) {
-                error(`Error executing ${insertString}: ${err}`);
+                error(`Error executing ${queryString} + ${values}: ${err}`);
                 reject(err);
             } else {
                 resolve(results);

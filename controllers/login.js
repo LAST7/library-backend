@@ -1,34 +1,19 @@
-import { compare } from "bcrypt";
-import jwt from "jsonwebtoken";
 import { Router } from "express";
-import { makeQueryPromise } from "../utils/dbUtils.js";
+import { compare } from "bcrypt";
+
+import { makeSQLPromise } from "../utils/dbUtils.js";
+import { generateToken } from "../utils/utils.js";
 
 const loginRouter = Router();
 
-/**
- * Generates a JWT token with the provided token content and expiration time.
- * This function creates a JWT token using the jsonwebtoken library, signing it with the secret key from the environment variables,
- * and setting an expiration time based on the provided expiresIn parameter.
- * @param {Object} tokenContent An object containing the payload data to be encoded into the token.
- * @param {string|number} expiresIn The expiration time for the token. This can be expressed as a numeric value representing seconds or a string describing a time span, such as "1h" for one hour.
- * @returns {string} The generated JWT token.
- * @example
- * const tokenContent = {
- *     username: "exampleUser",
- *     user_id: 123,
- * };
- * const expiresIn = "1h";
- * const token = generateToken(tokenContent, expiresIn);
- * console.log("Generated token:", token);
- */
-const generateToken = (tokenContent, expiresIn) => {
-    return jwt.sign(tokenContent, process.env.SECRET, {
-        expiresIn,
-    });
-};
-
 loginRouter.post("/student", async (req, res, next) => {
     const { studentId, password } = req.body;
+
+    if (studentId.length !== 7) {
+        return res.status(400).json({
+            error: "无效的学号",
+        });
+    }
 
     try {
         // Check username and password
@@ -36,11 +21,11 @@ loginRouter.post("/student", async (req, res, next) => {
             `SELECT user_id, username, password, name ` +
             `FROM User JOIN Student ON User.student_id = Student.student_id ` +
             `WHERE User.student_id = ?`;
-        const userResult = await makeQueryPromise(queryUser, [studentId]);
+        const userResult = await makeSQLPromise(queryUser, [studentId]);
 
         if (userResult.length === 0) {
             return res.status(401).json({
-                error: "学号不存在",
+                error: "该学号尚未注册，请前往注册",
             });
         }
 
@@ -63,10 +48,16 @@ loginRouter.post("/student", async (req, res, next) => {
         const token = generateToken(tokenContent, "7d");
 
         const name = userResult[0].name;
+        // TODO: should return more info or less?
         return res.status(200).send({ token, username, name });
     } catch (err) {
         next(err);
-        return res.status(500).end();
+        return res
+            .status(500)
+            .json({
+                error: "服务器内部错误",
+            })
+            .end();
     }
 });
 
@@ -76,7 +67,7 @@ loginRouter.post("/admin", async (req, res, next) => {
     try {
         const queryAdmin =
             `SELECT password, name ` + `FROM Admin ` + `WHERE admin_id = ?`;
-        const adminResult = await makeQueryPromise(queryAdmin, [adminId]);
+        const adminResult = await makeSQLPromise(queryAdmin, [adminId]);
 
         if (adminResult.length === 0) {
             return res.status(401).json({
@@ -93,20 +84,18 @@ loginRouter.post("/admin", async (req, res, next) => {
             });
         }
 
-        //generate token
+        // no token for admin users
         const name = adminResult[0].name;
-        const token = generateToken(
-            {
-                name,
-                admin_id: adminId,
-            },
-            "1h",
-        );
 
-        return res.status(200).send({ token, name });
+        return res.status(200).send({ name });
     } catch (err) {
         next(err);
-        return res.status(500).end();
+        return res
+            .status(500)
+            .json({
+                error: "服务器内部错误",
+            })
+            .end();
     }
 });
 

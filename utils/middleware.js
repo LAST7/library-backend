@@ -1,4 +1,7 @@
+import jwt from "jsonwebtoken";
+
 import { info, error } from "./logger.js";
+import { makeSQLPromise } from "./dbUtils.js";
 
 const requestLogger = (request, response, next) => {
     info("Method: ", request.method);
@@ -8,14 +11,36 @@ const requestLogger = (request, response, next) => {
     next();
 };
 
+const tokenExtractor = (request, response, next) => {
+    const auth = request.get("authorization");
+    if (auth && auth.startsWith("Bearer ")) {
+        request.token = auth.replace("Bearer ", "");
+    }
+
+    next();
+};
+
 const userExtractor = async (request, response, next) => {
     const extractedToken = request.token;
     if (extractedToken) {
         try {
-            const id = jwt.verify(extractedToken, process.env.SECRET).id;
-            // TODO: mysql (remember to export this function)
-            // const user = await User.findById(id);
-            request.user = user;
+            const user_id = jwt.verify(
+                extractedToken,
+                process.env.SECRET,
+            ).user_id;
+
+            // verify user inside database
+            const queryUser = `SELECT * FROM User WHERE user_id = ?`;
+            const userResult = await makeSQLPromise(queryUser, [user_id]);
+            if (userResult.length === 0) {
+                return response.status(401).json({
+                    error: "无效的 token，用户不存在",
+                });
+            }
+
+            request.user = {
+                user_id,
+            };
         } catch (exception) {
             // Mostly token expired
             next(exception);
@@ -45,4 +70,10 @@ const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: "unknown endpoint" });
 };
 
-export { requestLogger, errorHandler, unknownEndpoint };
+export {
+    requestLogger,
+    tokenExtractor,
+    userExtractor,
+    errorHandler,
+    unknownEndpoint,
+};

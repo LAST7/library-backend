@@ -1,7 +1,8 @@
-import jwt from "jsonwebtoken";
-import { hash } from "bcrypt";
 import Router from "express";
-import { makeQueryPromise, makeInsertPromise } from "../utils/dbUtils.js";
+import { hash } from "bcrypt";
+
+import { makeSQLPromise } from "../utils/dbUtils.js";
+import { generateToken } from "../utils/utils.js";
 
 const registerRouter = Router();
 
@@ -22,7 +23,7 @@ registerRouter.post("/", async (req, res, next) => {
             `FROM Student LEFT OUTER JOIN User ` +
             `ON Student.student_id = User.student_id ` +
             `WHERE Student.student_id = ?`;
-        const studentResult = await makeQueryPromise(queryString, [studentId]);
+        const studentResult = await makeSQLPromise(queryString, [studentId]);
 
         if (studentResult.length === 0) {
             return res.status(401).json({
@@ -42,25 +43,30 @@ registerRouter.post("/", async (req, res, next) => {
 
         // Insert the new user
         const insertUser = `INSERT INTO User (student_id, username, password) VALUES (?, ?, ?)`;
-        const insertResult = await makeInsertPromise(insertUser, [
+        const insertResult = await makeSQLPromise(insertUser, [
             studentId,
             username,
             passwordHash,
         ]);
 
         // generate token
-        const tokenContent = {
-            username,
-            user_id: insertResult.insertId,
-        };
-        const token = jwt.sign(tokenContent, process.env.SECRET, {
-            expiresIn: "1h",
-        });
+        const token = generateToken(
+            {
+                username,
+                user_id: insertResult.insertId,
+            },
+            "7d",
+        );
 
         return res.status(201).json({ token, username, name });
     } catch (err) {
         next(err);
-        return res.status(500).end();
+        return res
+            .status(500)
+            .json({
+                error: "服务器内部错误",
+            })
+            .end();
     }
 });
 
