@@ -19,10 +19,10 @@ registerRouter.post("/", async (req, res, next) => {
     try {
         // Check if student id exists & get the student's name
         const queryString =
-            `SELECT Student.student_id, username, name ` +
-            `FROM Student LEFT OUTER JOIN User ` +
-            `ON Student.student_id = User.student_id ` +
-            `WHERE Student.student_id = ?`;
+            "SELECT Student.student_id, username, name " +
+            "FROM Student LEFT OUTER JOIN User " +
+            "ON Student.student_id = User.student_id " +
+            "WHERE Student.student_id = ?";
         const studentResult = await makeSQLPromise(queryString, [studentId]);
 
         if (studentResult.length === 0) {
@@ -42,7 +42,8 @@ registerRouter.post("/", async (req, res, next) => {
         const passwordHash = await hash(password, saltRound);
 
         // Insert the new user
-        const insertUser = `INSERT INTO User (student_id, username, password) VALUES (?, ?, ?)`;
+        const insertUser =
+            "INSERT INTO User (student_id, username, password) VALUES (?, ?, ?)";
         const insertResult = await makeSQLPromise(insertUser, [
             studentId,
             username,
@@ -52,7 +53,7 @@ registerRouter.post("/", async (req, res, next) => {
         // generate token
         const token = generateToken(
             {
-                username,
+                studentId,
                 user_id: insertResult.insertId,
             },
             "7d",

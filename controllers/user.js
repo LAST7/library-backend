@@ -23,31 +23,31 @@ userRouter.get("/info", async (req, res, next) => {
     try {
         // query basic info
         const queryInfo =
-            `SELECT Student.name ` +
-            `FROM User JOIN Student ON User.student_id = Student.student_id ` +
-            `WHERE User.user_id = ?`;
+            "SELECT Student.name " +
+            "FROM User JOIN Student ON User.student_id = Student.student_id " +
+            "WHERE User.user_id = ?";
         const infoResult = await makeSQLPromise(queryInfo, [user_id]);
         const studentName = infoResult[0].name;
 
         // query reservation info
         const queryReservation =
-            `SELECT * ` + `FROM Reservation ` + `WHERE Reservation.user_id = ?`;
+            "SELECT * " + "FROM Reservation " + "WHERE Reservation.user_id = ?";
         const reservationResult = await makeSQLPromise(queryReservation, [
             user_id,
         ]);
         // separate outdated reservation
         const reservationCount = reservationResult.length;
         const outdatedReservation = reservationResult.filter(
-            (r) => new Date(r.check_out_time) > new Date(),
+            (r) => new Date() > new Date(r.check_out_time),
         );
         const outdated = outdatedReservation.length;
         const active = reservationCount - outdated;
 
         // query penalty info
         const queryPenalty =
-            `SELECT count(*) as count ` +
-            `FROM Penalty ` +
-            `WHERE Penalty.user_id = ?`;
+            "SELECT count(*) as count " +
+            "FROM Penalty " +
+            "WHERE Penalty.user_id = ?";
         const penaltyResult = await makeSQLPromise(queryPenalty, [user_id]);
         const penaltyCount = penaltyResult[0].count;
 
@@ -56,12 +56,11 @@ userRouter.get("/info", async (req, res, next) => {
             return res
                 .status(500)
                 .json({
-                    error: "服务器内部错误",
+                    error: "服务器内部错误，用户不存在",
                 })
                 .end();
         }
 
-        // TODO: test utility
         return res.status(200).json({
             studentName,
             reservationCount: {
@@ -104,7 +103,7 @@ userRouter.put("/changepasswd", async (req, res, next) => {
     }
 
     try {
-        const queryUser = `SELECT password FROM User WHERE user_id = ?`;
+        const queryUser = "SELECT password FROM User WHERE user_id = ?";
         const userResult = await makeSQLPromise(queryUser, [user_id]);
 
         // validate old password
@@ -120,7 +119,7 @@ userRouter.put("/changepasswd", async (req, res, next) => {
         const { newPasswd } = req.body;
         const saltRound = 12;
         const newPasswordHash = await hash(newPasswd, saltRound);
-        const updatePassword = `UPDATE User SET password = ? WHERE user_id = ?`;
+        const updatePassword = "UPDATE User SET password = ? WHERE user_id = ?";
         const passwordResult = await makeSQLPromise(updatePassword, [
             newPasswordHash,
             user_id,

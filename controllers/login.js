@@ -18,9 +18,9 @@ loginRouter.post("/student", async (req, res, next) => {
     try {
         // Check username and password
         const queryUser =
-            `SELECT user_id, username, password, name ` +
-            `FROM User JOIN Student ON User.student_id = Student.student_id ` +
-            `WHERE User.student_id = ?`;
+            "SELECT user_id, username, password, name " +
+            "FROM User JOIN Student ON User.student_id = Student.student_id " +
+            "WHERE User.student_id = ?";
         const userResult = await makeSQLPromise(queryUser, [studentId]);
 
         if (userResult.length === 0) {
@@ -39,16 +39,17 @@ loginRouter.post("/student", async (req, res, next) => {
         }
 
         // generate token
-        const username = userResult[0].username;
         const user_id = userResult[0].user_id;
-        const tokenContent = {
-            username,
-            user_id,
-        };
-        const token = generateToken(tokenContent, "7d");
+        const token = generateToken(
+            {
+                studentId,
+                user_id,
+            },
+            "7d",
+        );
 
+        const username = userResult[0].username;
         const name = userResult[0].name;
-        // TODO: should return more info or less?
         return res.status(200).send({ token, username, name });
     } catch (err) {
         next(err);
@@ -66,7 +67,7 @@ loginRouter.post("/admin", async (req, res, next) => {
 
     try {
         const queryAdmin =
-            `SELECT password, name ` + `FROM Admin ` + `WHERE admin_id = ?`;
+            "SELECT password, name " + "FROM Admin " + "WHERE admin_id = ?";
         const adminResult = await makeSQLPromise(queryAdmin, [adminId]);
 
         if (adminResult.length === 0) {
@@ -97,6 +98,12 @@ loginRouter.post("/admin", async (req, res, next) => {
             })
             .end();
     }
+});
+
+loginRouter.get("/teapot", (req, res) => {
+    return res.status(418).json({
+        cat: "I'm a teapot.",
+    });
 });
 
 export default loginRouter;

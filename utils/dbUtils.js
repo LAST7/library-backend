@@ -8,6 +8,7 @@ const DB = mysql.createConnection({
     user: config.DB_USER,
     database: config.DB_NAME,
     password: config.DB_PASSWD,
+    timezone: "utc",
 });
 
 process.on("SIGINT", () => {
