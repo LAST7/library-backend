@@ -7,8 +7,10 @@ import userRouter from "./controllers/user.js";
 import reservationRouter from "./controllers/reservation.js";
 import seatRouter from "./controllers/seat.js";
 import penaltyRouter from "./controllers/penalty.js";
+import adminRouter from "./controllers/admin.js";
 
 import {
+    adminExtractor,
     errorHandler,
     requestLogger,
     tokenExtractor,
@@ -29,6 +31,7 @@ app.use("/api/user", userExtractor, userRouter);
 app.use("/api/reservation", userExtractor, reservationRouter);
 app.use("/api/seat", userExtractor, seatRouter);
 app.use("/api/penalty", userExtractor, penaltyRouter);
+app.use("/api/admin", adminExtractor, adminRouter);
 
 app.use(unknownEndpoint);
 app.use(errorHandler);

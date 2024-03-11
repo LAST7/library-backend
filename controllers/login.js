@@ -85,10 +85,16 @@ loginRouter.post("/admin", async (req, res, next) => {
             });
         }
 
-        // no token for admin users
+        // generate token
+        const token = generateToken(
+            {
+                admin_id: adminId,
+            },
+            "2h",
+        );
         const name = adminResult[0].name;
 
-        return res.status(200).send({ name });
+        return res.status(200).send({ token, name, admin_id: adminId });
     } catch (err) {
         next(err);
         return res

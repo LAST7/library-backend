@@ -72,7 +72,7 @@ reservationRouter.post("/", async (req, res, next) => {
         const penaltyResult = await makeSQLPromise(queryPenalty, [user_id]);
 
         const activePenalty = penaltyResult.filter(
-            (p) => new Date(p.util) > new Date(),
+            (p) => new Date(p.until) > new Date(),
         );
         if (activePenalty.length !== 0) {
             return res.status(401).json({
