@@ -1,32 +1,15 @@
 import { Router } from "express";
 
 import { makeSQLPromise } from "../utils/dbUtils.js";
-import { scheduleTask } from "../utils/utils.js";
 import { error } from "../utils/logger.js";
 
 const reservationRouter = Router();
 
-/* const releaseSeat = (seat_id) => {
-    const updateSeat = "Update Seat SET available = 1 WHERE seat_id = ?";
-    makeSQLPromise(updateSeat, [seat_id]);
-}; */
-
 reservationRouter.get("/info", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { user_id } = req.user;
-    if (!user_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     try {
+        // exracted by userExtractor from middleware
+        const { user_id } = req.user;
+
         const queryReservation =
             "SELECT reservation_id, seat_number, floor_level, reservation_time, check_in_time, check_out_time, cancelled " +
             "FROM Reservation JOIN Seat ON Reservation.seat_id = Seat.seat_id " +
@@ -48,24 +31,12 @@ reservationRouter.get("/info", async (req, res, next) => {
 });
 
 reservationRouter.post("/", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { user_id } = req.user;
-    if (!user_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     // TODO: should limit the number of reservation that one user can create
 
     try {
-        // TODO: test utility
+        // exracted by userExtractor from middleware
+        const { user_id } = req.user;
+
         // penalty check
         const queryPenalty =
             "SELECT penalty_id, until FROM Penalty WHERE user_id = ?";
@@ -76,7 +47,7 @@ reservationRouter.post("/", async (req, res, next) => {
         );
         if (activePenalty.length !== 0) {
             return res.status(401).json({
-                error: `无法预订，惩罚 ${activePenalty.map((p) => p.penalty_id)} 未过期`,
+                error: "无法预订，存在未到期的惩罚",
             });
         }
 
@@ -104,7 +75,6 @@ reservationRouter.post("/", async (req, res, next) => {
         }
 
         // `seatAvail` and `floorAvail` should be number type, 1 for true and 0 for false
-        // welcome to javascript
         const seat_id = availResult[0].seat_id;
         const seatAvail = availResult[0].available;
         const floorAvail = availResult[0].open;
@@ -137,10 +107,6 @@ reservationRouter.post("/", async (req, res, next) => {
                 error: "该座位在此预约时段不可用",
             });
         }
-
-        // update seat status
-        /* const updateSeat = "UPDATE Seat SET available = 0 WHERE seat_id = ?";
-        const updateResult = await makeSQLPromise(updateSeat, [seat_id]); */
 
         // should be UTC-0 standard date & time
         const currentTime = new Date()

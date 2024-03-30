@@ -5,20 +5,6 @@ import { makeSQLPromise } from "../utils/dbUtils.js";
 const adminRouter = Router();
 
 adminRouter.get("/", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { admin_id } = req.admin;
-    if (!admin_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     try {
         const queryFloor = "SELECT * FROM Floor";
         const floorResult = await makeSQLPromise(queryFloor);
@@ -43,23 +29,14 @@ adminRouter.get("/", async (req, res, next) => {
 });
 
 adminRouter.put("/floor", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { admin_id } = req.admin;
-    if (!admin_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
+    const { floor_level, status } = req.body;
+    if (!floor_level || !status) {
+        return res.status(400).json({
+            error: "请求参数缺失",
         });
     }
 
     try {
-        const { floor_level, status } = req.body;
-
         const statusBool = status === "open" ? 1 : 0;
 
         const updateFloor = "UPDATE Floor SET open = ? WHERE floor_level = ?";
@@ -81,20 +58,6 @@ adminRouter.put("/floor", async (req, res, next) => {
 });
 
 adminRouter.get("/penalty-type", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { admin_id } = req.admin;
-    if (!admin_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     try {
         const queryPenaltyType = "SELECT * FROM PenaltyType";
         const penaltyTypeResult = await makeSQLPromise(queryPenaltyType);
@@ -112,20 +75,6 @@ adminRouter.get("/penalty-type", async (req, res, next) => {
 });
 
 adminRouter.get("/student", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { admin_id } = req.admin;
-    if (!admin_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     try {
         const queryStudent =
             "SELECT user_id, username, name FROM Student " +
@@ -145,23 +94,15 @@ adminRouter.get("/student", async (req, res, next) => {
 });
 
 adminRouter.post("/penalty", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
+    const { user_id, admin_id, penalty_type_id, until } = req.body;
 
-    // exracted by userExtractor from middleware
-    const { admin_id } = req.admin;
-    if (!admin_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
+    if (!user_id || !admin_id || !penalty_type_id || until) {
+        return res.status(400).json({
+            error: "请求参数缺失",
         });
     }
 
     try {
-        const { user_id, admin_id, penalty_type_id, until } = req.body;
-
         const insertPenalty =
             "INSERT INTO Penalty (user_id, admin_id, penalty_type_id, until) " +
             "VALUES (?, ?, ?, ?)";

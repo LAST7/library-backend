@@ -48,6 +48,10 @@ const userExtractor = async (request, response, next) => {
             // Mostly token expired
             next(exception);
         }
+    } else {
+        return response.status(401).json({
+            error: "未检测到 token，请登录",
+        });
     }
 
     next();
@@ -80,6 +84,10 @@ const adminExtractor = async (request, response, next) => {
         } catch (exception) {
             next(exception);
         }
+    } else {
+        return response.status(401).json({
+            error: "未检测到 token，请登录",
+        });
     }
 
     next();
@@ -88,14 +96,12 @@ const adminExtractor = async (request, response, next) => {
 const errorHandler = (err, request, response, next) => {
     error(err.message);
 
-    if (err.name === "CastError") {
-        return response.status(400).send({ error: "malformatted id" });
-    } else if (err.name === "ValidationError") {
+    if (err.name === "ValidationError") {
         return response.status(400).json({ error: err.message });
     } else if (err.name === "JsonWebTokenError") {
         return response.status(401).json({ error: err.message });
     } else if (err.name === "TokenExpiredError") {
-        return response.status(401).json({ error: "token expired" });
+        return response.status(401).json({ error: "已过期的 token" });
     }
 
     next(err);

@@ -6,21 +6,10 @@ import { makeSQLPromise } from "../utils/dbUtils.js";
 const userRouter = Router();
 
 userRouter.get("/info", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { user_id } = req.user;
-    if (!user_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     try {
+        // exracted by userExtractor from middleware
+        const { user_id } = req.user;
+
         // query basic info
         const queryInfo =
             "SELECT Student.name " +
@@ -81,20 +70,6 @@ userRouter.get("/info", async (req, res, next) => {
 });
 
 userRouter.put("/changepasswd", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { user_id } = req.user;
-    if (!user_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     const { oldPasswd } = req.body;
     if (!oldPasswd) {
         return res.status(400).json({
@@ -103,6 +78,9 @@ userRouter.put("/changepasswd", async (req, res, next) => {
     }
 
     try {
+        // exracted by userExtractor from middleware
+        const { user_id } = req.user;
+
         const queryUser = "SELECT password FROM User WHERE user_id = ?";
         const userResult = await makeSQLPromise(queryUser, [user_id]);
 

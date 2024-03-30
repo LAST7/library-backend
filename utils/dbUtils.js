@@ -16,6 +16,7 @@ process.on("SIGINT", () => {
     DB.end((err) => {
         if (err) {
             error("Error closing database connection: ", err);
+            process.exit(0);
         } else {
             info("Database connection closed.");
             process.exit(0);

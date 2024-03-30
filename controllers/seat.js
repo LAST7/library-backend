@@ -5,20 +5,6 @@ import { makeSQLPromise } from "../utils/dbUtils.js";
 const seatRouter = Router();
 
 seatRouter.get("/info", async (req, res, next) => {
-    if (!req.token) {
-        return res.status(401).json({
-            error: "未检测到 token，请登录",
-        });
-    }
-
-    // exracted by userExtractor from middleware
-    const { user_id } = req.user;
-    if (!user_id) {
-        return res.status(401).json({
-            error: "无效的 token，请重新登录",
-        });
-    }
-
     try {
         const querySeat =
             "SELECT * FROM Seat JOIN Floor " +

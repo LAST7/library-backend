@@ -7,8 +7,12 @@ import { generateToken } from "../utils/utils.js";
 const registerRouter = Router();
 
 registerRouter.post("/", async (req, res, next) => {
-    // TODO: write middleware to ensure data in request body
     const { studentId, username, password } = req.body;
+    if (!studentId || !username || !password) {
+        return res.status(400).json({
+            error: "请求参数缺失",
+        });
+    }
 
     if (studentId.length !== 7) {
         return res.status(400).json({
