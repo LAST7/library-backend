@@ -3,13 +3,40 @@ import mysql from "mysql";
 import config from "./config.js";
 import { info, error } from "./logger.js";
 
-const DB = mysql.createConnection({
-    host: config.DB_HOST,
-    user: config.DB_USER,
-    database: config.DB_NAME,
-    password: config.DB_PASSWD,
-    timezone: "utc",
-});
+let DB;
+const RETRY_INTERVAL = 5000;
+const MAX_RETRIES = 10;
+
+const createConnection = () => {
+    return mysql.createConnection({
+        host: config.DB_HOST,
+        user: config.DB_USER,
+        database: config.DB_NAME,
+        password: config.DB_PASSWD,
+        timezone: "utc",
+    });
+};
+
+const connecWithRetry = (retryCount = 0) => {
+    DB = createConnection();
+
+    DB.connect((err) => {
+        if (err) {
+            error("Error connecting to database: ", err);
+            if (MAX_RETRIES !== 0 && retryCount > MAX_RETRIES) {
+                error("Max retries reached. Exiting...");
+                process.exit(1);
+            }
+
+            info(
+                `Retrying in ${RETRY_INTERVAL / 1000}s... (Attempt ${retryCount + 1}${MAX_RETRIES ? "/" + MAX_RETRIES : ""})`,
+            );
+            setTimeout(() => connecWithRetry(retryCount + 1), RETRY_INTERVAL);
+        } else {
+            info("Connected to Database");
+        }
+    });
+};
 
 process.on("SIGINT", () => {
     info("Received SIGINT. Closing database connection...");
@@ -23,14 +50,10 @@ process.on("SIGINT", () => {
         }
     });
 });
+
 // Connect to Database
-DB.connect((err) => {
-    if (err) {
-        error("Error connecting to database: ", err);
-    } else {
-        info("Connected to Database");
-    }
-});
+connecWithRetry();
+
 /**
  * Executes a database query asynchronously and returns a promise.
  * This function takes a SQL query command and optional values,

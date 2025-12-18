@@ -51,6 +51,19 @@ reservationRouter.post("/", async (req, res, next) => {
             });
         }
 
+        // Check reservation limit (max 3 per user)
+        const queryReservationCount =
+            "SELECT COUNT(*) as count FROM Reservation WHERE user_id = ?";
+        const reservationCountResult = await makeSQLPromise(
+            queryReservationCount,
+            [user_id],
+        );
+        if (reservationCountResult[0].count >= 3) {
+            return res.status(403).json({
+                error: "已达到最大预订数量限制 (3 次)",
+            });
+        }
+
         const { seat_number, floor_level, iTime, oTime } = req.body;
         // availability check
         const queryAvail =
